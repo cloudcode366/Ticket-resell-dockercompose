@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: ticket-resell
+    env: docker
+    plan: free
+    image: ambrose47/ticket-resell:lasted  # Gọi trực tiếp image từ Docker Hub
+    startCommand: "dotnet TicketResell.dll"  # Lệnh khởi động của ứng dụng
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Development
+    healthCheckPath: /
+    ports:
+      - 8080
+    dependsOn:
+      - sql  # Phụ thuộc vào service SQL
+    networks:
+      - ticketresellapp
+
+  - type: database
+    name: ticketresell-db
+    env: mssql
+    plan: starter
+    version: 2022
+    envVars:
+      - key: SA_PASSWORD
+        value: TicketResell2024@
+      - key: ACCEPT_EULA
+        value: Y
+    ports:
+      - 1434
+    healthCheck:
+      command:
+        - CMD-SHELL
+        - "/opt/mssql-tools18/bin/sqlcmd -S 0.0.0.0,1434 -U sa -P TicketResell2024@ -Q 'SELECT 1' -C"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - name: sqlserver_data
+        driver: local
+    networks:
+      - ticketresellapp
+
+networks:
+  - name: ticketresellapp
+    driver: bridge
+
+volumes:
+  - name: sqlserver_data
+    driver: local
